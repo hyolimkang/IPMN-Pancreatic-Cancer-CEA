@@ -18,7 +18,8 @@ library(dampack)
 library(ggplot2)
 library(ggforce)
 library(data.table)
-
+library(ggridges)
+library(ggpubr)
 options(scipen = 999)
 
 #-------------------------------------------------------------------------------
@@ -166,12 +167,12 @@ init.noWF        <- c("H1" = d_H1-d_H1WF, "H2"= 0,"H3"= 0,"WF"= 0,"Cancer"= 0,"D
 #initial state vector (1-2cm): total sum should be d_H2
 init.surgeryH2    <- c("Surg" =d_H2WFSurg, "Nocomp"= 0, "Comp"=0, "Cancer"=0, "Death"=0) # apply surgery markov
 init.survH2       <- c("H1"= 0,"H2"= 0,"H3"= 0,"WF"= d_H2WF - d_H2WFSurg,"Cancer"= 0,"Death"= 0)# apply disease markov
-init.noWFH2       <- c("H1" = d_H2-d_H2WF, "H2"= 0,"H3"= 0,"WF"= 0,"Cancer"= 0,"Death"= 0)# apply disease markov
+init.noWFH2       <- c("H1" = 0, "H2"= d_H2-d_H2WF,"H3"= 0,"WF"= 0,"Cancer"= 0,"Death"= 0)# apply disease markov
 
 #initial state vector (2-3cm): total sum should be d_H3
 init.surgeryH3    <- c("Surg" =d_H3WFSurg, "Nocomp"= 0, "Comp"=0, "Cancer"=0, "Death"=0) # apply surgery markov
 init.survH3       <- c("H1"= 0,"H2"= 0,"H3"= 0,"WF"= d_H3WF - d_H3WFSurg,"Cancer"= 0,"Death"= 0)# apply disease markov
-init.noWFH3       <- c("H1" = d_H3-d_H3WF, "H2"= 0,"H3"= 0,"WF"= 0,"Cancer"= 0,"Death"= 0)# apply disease markov
+init.noWFH3       <- c("H1" = 0, "H2"= 0,"H3"= d_H3-d_H3WF,"WF"= 0,"Cancer"= 0,"Death"= 0)# apply disease markov
 
 
 #cohort trace matrix: Distribution of the cohorts (<1cm)
@@ -290,9 +291,10 @@ ggplot(noWfStack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
     theme_minimal()
   
-ggplot(noWfStack, aes(x = Cycle, y = Proportion, color = State)) +
-    geom_line() +
-  theme_minimal()
+noWf1 <- ggplot(noWfStack, aes(x = Cycle, y = Proportion, color = State)) +
+            geom_line() +
+             theme_minimal()+
+               ylim(0,0.5)
 
 #iterative solutions for surgery markov
 for(t in 1:n.cycles) {
@@ -313,9 +315,10 @@ ggplot(surg1Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(surg1Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+surg1 <- ggplot(surg1Stack, aes(x = Cycle, y = Proportion, color = State)) +
+            geom_line() +
+             theme_minimal()+
+               ylim(0,0.2)
 
 #iterative solutions for surveillance + WF markov 
 for(t in 1:n.cycles) {
@@ -335,9 +338,11 @@ ggplot(surv1Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(surv1Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+wf1surv <- ggplot(surv1Stack, aes(x = Cycle, y = Proportion, color = State)) +
+            geom_line() +
+              theme_minimal()+
+                ylim(0,0.02)
+  
 
 combinedH1 <- cbind(m_M_noWf, m_M_surv, m_M_surgery1)
 write.csv(combinedH1, file="combined_H1.csv", row.names = F)
@@ -368,9 +373,10 @@ ggplot(noWf2Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(noWf2Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+noWf2 <- ggplot(noWf2Stack, aes(x = Cycle, y = Proportion, color = State)) +
+           geom_line() +
+             theme_minimal()+
+              ylim(0,0.5)
 
 #iterative solutions for surgery markov
 for(t in 1:n.cycles) {
@@ -391,9 +397,10 @@ ggplot(surg2Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(surg2Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+surg2 <- ggplot(surg2Stack, aes(x = Cycle, y = Proportion, color = State)) +
+          geom_line() +
+           theme_minimal()+
+             ylim(0,0.2)
 
 #iterative solutions for surveillance + WF markov 
 for(t in 1:n.cycles) {
@@ -413,12 +420,29 @@ ggplot(surv2Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(surv2Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+wf2surv <-  ggplot(surv2Stack, aes(x = Cycle, y = Proportion, color = State)) +
+             geom_line() +
+               theme_minimal()+
+                 ylim(0,0.02)
 
 combinedH2 <- cbind(m_M_noWf2, m_M_surv2, m_M_surgery2)
 write.csv(combinedH2, file="combined_H2.csv", row.names = F)
+
+figure1 <- ggarrange(noWf1, noWf2, noWf3,
+                     labels = c("<1cm", "1-2cm", "2-3cm"),
+                     ncol = 3, nrow = 1)
+ggsave("nowf.pdf", figure1, dpi=1000, device= "pdf", height=8, width=15,units="in", bg=NULL, limitsize = F)
+
+figure2 <- ggarrange(surg1, surg2, surg3,
+                     labels = c("<1cm", "1-2cm", "2-3cm"),
+                     ncol = 3, nrow = 1)
+ggsave("surg.pdf", figure2, dpi=1000, device= "pdf", height=8, width=15,units="in", bg=NULL, limitsize = F)
+
+figure2 <- ggarrange(wf1surv, wf2surv, wf3surv,
+                     labels = c("<1cm", "1-2cm", "2-3cm"),
+                     ncol = 3, nrow = 1)
+ggsave("wfsurv.pdf", figure2, dpi=1000, device= "pdf", height=8, width=15,units="in", bg=NULL, limitsize = F)
+
 
 #-------------------------------------------------------------------------------
 # 2-3cm
@@ -446,9 +470,10 @@ ggplot(noWf3Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(noWf3Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+noWf3 <-ggplot(noWf3Stack, aes(x = Cycle, y = Proportion, color = State)) +
+           geom_line() +
+            theme_minimal()+
+               ylim(0,0.5)
 
 #iterative solutions for surgery markov
 for(t in 1:n.cycles) {
@@ -469,9 +494,10 @@ ggplot(surg3Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(surg3Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+surg3 <- ggplot(surg3Stack, aes(x = Cycle, y = Proportion, color = State)) +
+             geom_line() +
+               theme_minimal()+
+                ylim(0,0.2)
 
 #iterative solutions for surveillance + WF markov 
 for(t in 1:n.cycles) {
@@ -491,15 +517,21 @@ ggplot(surv3Stack, aes(x = Cycle, y = Proportion))+
   #labs(title = col)+
   theme_minimal()
 
-ggplot(surv3Stack, aes(x = Cycle, y = Proportion, color = State)) +
-  geom_line() +
-  theme_minimal()
+wf3surv <- ggplot(surv3Stack, aes(x = Cycle, y = Proportion, color = State)) +
+            geom_line() +
+             theme_minimal()+
+              ylim(0,0.02)
 
 combinedH3 <- cbind(m_M_noWf3, m_M_surv3, m_M_surgery3)
 write.csv(combinedH3, file="combined_H3.csv", row.names = F)
 
 allcombined <- cbind(combinedH1,combinedH2,combinedH3)
 write.csv(allcombined, file="allcombined.csv", row.names = F)
+
+figure1 <-  ggarrange(noWf1, noWf2, noWf3, ncol = 1, nrow = 1)
+ggarrange(noWf1, noWf2, noWf3,
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 1)
 
 #-------------------------------------------------------------------------------
 # State Rewards
